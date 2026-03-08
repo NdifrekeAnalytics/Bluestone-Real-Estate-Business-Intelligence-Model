@@ -1,0 +1,115 @@
+# ============================================================
+# .gitignore — BlueStone Real Estate Project
+# TRACKED (not ignored): app.py, requirements.txt,
+#                         bluestone_outputs/, Bluestone Project.csv
+# ============================================================
+
+
+# ── GIT & SYSTEM ─────────────────────────────────────────────
+.git/
+.ipynb_checkpoints/
+
+
+# ── FOLDERS ──────────────────────────────────────────────────
+Group 2/
+Koko/
+Koko 2/
+Patience - Child of Destiny/
+Sammy/
+
+
+# ── PDF FILES ────────────────────────────────────────────────
+BlueStone Real Estate Inc - Odafe.pdf
+Bluestone Stone Real Estate Machine Learning Feasibility Report.pdf
+Data Science - Machine Learning Feasibility Plan_BlueStone Project.pdf
+Development of Centralized Data Platform  Real Estate Company.pdf
+
+
+# ── APPLICATIONS / INSTALLERS ────────────────────────────────
+Lark-win32_x64-7.61.9-signed.exe
+*.crdownload
+Unconfirmed 781071.crdownload
+
+
+# ── POWER BI FILES ───────────────────────────────────────────
+BLUESTONE POWERBI.pbix
+BLUESTONE PROJECT.pbix
+
+
+# ── HTML FILES ───────────────────────────────────────────────
+BlueStone_Dashboard.html
+
+
+# ── JUPYTER NOTEBOOKS ────────────────────────────────────────
+BlueStone Real Estate Project.ipynb
+BlueStone Real Estate Project - Copy.ipynb
+BlueStone Real Estate Project - Copy (2).ipynb
+
+
+# ── EXCEL / CSV DATA FILES ───────────────────────────────────
+Bluestone Project.xlsx
+Bluestone_data.xlsx
+inquiries.xlsx
+inquiries.csv
+listing_history.xlsx
+listing_history.csv
+listings.xlsx
+listings.csv
+Market Data By Bedrooms.xlsx
+Market Data By Bedrooms.csv
+Market Data By Property.xlsx
+Market Data By Property.csv
+Market Data By Property-PSM-NG-0005016.xlsx
+Market Data By Property-PSM-NG-0005016.csv
+Market Stats.xlsx
+Market Stats.csv
+rental_transactions.xlsx
+rental_transactions.csv
+sale_transactions.xlsx
+sale_transactions.csv
+
+
+# ── POWERPOINT PRESENTATIONS ─────────────────────────────────
+BlueStone_Final_Presentation.pptx
+BlueStone_PowerBI_Dashboard.pptx
+Bluestone_Project_Presentation.pptx
+
+
+# ── WORD DOCUMENTS ───────────────────────────────────────────
+BlueStone Streamlit Web Deployment_Guide (1).docx
+BlueStone Streamlit Web Deployment_Guide.docx
+BlueStone_Deployment_Guide.docx
+Data Engineer - data_dictionary_bluestone.docx
+Data Science - Machine Learning Feasibility Plan_BlueStone Project.docx
+Explaining Lead Conversion Intelligence & Prediction - Bluestone Real Estate P....docx
+PRODUCT REQUIREMENTS DOCUMENT 4 BLUESTONE REAL ESTATE.docx
+
+
+# ── VIDEO FILES ──────────────────────────────────────────────
+Retrieving Data From Snowflake Into PowerBI Recording 2026-02-23 173409.mp4
+*.mp4
+
+
+# ── IMAGE / LOGO FILES ───────────────────────────────────────
+BlueStone Logo.png
+BlueStone_Logo.png
+Centralized Data Hub.png
+Data Science Machine Learning Workflow.png
+Data Scientist Image.png
+
+
+# ── OTHER PYTHON SCRIPTS (non-app) ───────────────────────────
+import_csv_to_postgres.py
+
+
+# ── OS / EDITOR GENERATED ────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+*.log
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.env
