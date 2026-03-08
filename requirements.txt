@@ -1,5 +1,5 @@
 streamlit==1.45.0
-pandas==2.2.2
+pandas==2.2.2; platform_system != "Linux"  # Use source on local; on Cloud, let it pick wheel-compatible
 numpy==1.26.4
 scikit-learn==1.5.2
 scipy==1.13.1
@@ -18,5 +18,5 @@ python-dateutil==2.9.0
 pytz==2024.2
 PyYAML==6.0.2
 tqdm==4.66.5
-packaging==24.1
-cloudpickle==3.0.0
+numba==0.60.0  # Pin to match shap; supports Python 3.11
+llvmlite==0.43.0  # Pin to avoid build issues
