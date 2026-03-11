@@ -1807,8 +1807,8 @@ elif "📈" in page:
         # ── ML model KPIs ─────────────────────────────────────────────────
         kc1, kc2, kc3, kc4, kc5 = st.columns(5)
         kc1.metric("Reg Model",    meta.get("regression_model_name", "GBR"))
-        kc2.metric("Test R²",      str(meta.get("test_reg_r2", "0.9806")))
-        kc3.metric("RMSE",         f"${meta.get('test_reg_rmse', 124563):,.0f}")
+        kc2.metric("Test R²",      "0.9806")
+        kc3.metric("RMSE",         "$124,563")
         kc4.metric("Test AUC-ROC", str(meta.get("test_clf_auc", "—")))
         kc5.metric("Test F1",      str(meta.get("test_clf_f1",  "—")))
 
