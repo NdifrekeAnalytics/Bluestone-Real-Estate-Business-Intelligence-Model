@@ -1700,159 +1700,390 @@ elif "📊" in page:
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# PAGE 5 — ANALYTICS DASHBOARD (Power BI Embed — Method 1: Publish to Web)
+# PAGE 5 — ANALYTICS DASHBOARD (Native Plotly — 3 sub-pages)
 # ════════════════════════════════════════════════════════════════════════════
 
 elif "📈" in page:
 
-    # ── Power BI embed URL ────────────────────────────────────────────────
-    # Source: Power BI Service → File → Embed report → Publish to web (public)
-    # Copy the URL from "Link to embed this content" (NOT the iframe HTML block)
-    POWERBI_EMBED_URL = (
-        "https://app.powerbi.com/reportEmbed?reportId=fa52ce1b-2974-425c-8c02-1782ec10d01d&autoAuth=true&ctid=7c1f24a6-7d39-452c-8237-0726e3b19a73"
-    )
+    import plotly.graph_objects as go
+    import plotly.express as px
 
-    st.markdown("""
-    <div class='bs-page-header'>
-      <h1><span class='bs-h1-icon'>📡</span>Analytics Dashboard</h1>
-      <div class='bs-page-subtitle'>
-        Live Power BI report embedded via Publish to Web (Method 1 — Public)
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # ── Load data ─────────────────────────────────────────────────────────
+    @st.cache_data(show_spinner="Loading analytics data...")
+    def load_analytics_data():
+        data_path = Path.cwd() / "Bluestone Project.csv"
+        if not data_path.exists():
+            for p in Path.cwd().rglob("Bluestone Project.csv"):
+                data_path = p
+                break
+        df = pd.read_csv(str(data_path), low_memory=False)
+        df["CREATEDDATE"] = pd.to_datetime(df["CREATEDDATE"], errors="coerce")
+        df["YEAR"]  = df["CREATEDDATE"].dt.year
+        df["MONTH"] = df["CREATEDDATE"].dt.month
+        return df
 
-    # ── ML model KPIs displayed above the dashboard ───────────────────────
-    kc1, kc2, kc3, kc4, kc5 = st.columns(5)
-    kc1.metric("Reg Model",    meta.get("regression_model_name", "GBR"))
-    kc2.metric("Test R²",      "0.9806")
-    kc3.metric("RMSE",         "$124,563")
-    kc4.metric("Test AUC-ROC", str(meta.get("test_clf_auc", "—")))
-    kc5.metric("Test F1",      str(meta.get("test_clf_f1", "—")))
+    try:
+        adf = load_analytics_data()
+        data_ok = True
+    except Exception as _e:
+        st.error(f"Could not load 'Bluestone Project.csv'. Place it in the same folder as app.py. Error: {_e}")
+        data_ok = False
 
-    st.markdown("<div style='margin-top:0.4rem;'></div>", unsafe_allow_html=True)
+    if data_ok:
 
-    # ── Two-tab layout ────────────────────────────────────────────────────
-    dash_tab1, dash_tab2 = st.tabs(["📊  Full Dashboard", "ℹ️  Embed Guide"])
+        BG      = "#0F1923"
+        SURFACE = "#162233"
+        GOLD    = "#C8A85A"
+        GOLD2   = "#E6C97E"
+        GREEN   = "#2ECC71"
+        AMBER   = "#F39C12"
+        TEAL    = "#1E9B8A"
+        SLATE   = "#7A8FA6"
+        CREAM   = "#EDE8DF"
+        CITIES  = ["Atlanta","Austin","Charlotte","Chicago","Denver","Houston","Phoenix"]
+        MONTHS  = ["January","February","March","April","May","June",
+                   "July","August","September","October","November","December"]
 
-    with dash_tab1:
-        # Dark-themed card wrapper matching app design system
+        def pbi_layout(fig, title="", height=300, showlegend=False):
+            fig.update_layout(
+                title=dict(text=title, font=dict(color=CREAM, size=13, family="Outfit"),
+                           x=0, xanchor="left", pad=dict(l=4, t=4)),
+                paper_bgcolor=SURFACE, plot_bgcolor=SURFACE,
+                font=dict(color=CREAM, family="Outfit", size=11),
+                height=height, margin=dict(l=10, r=10, t=36, b=10),
+                showlegend=showlegend,
+                legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(color=CREAM, size=10),
+                            orientation="h", yanchor="bottom", y=-0.28, xanchor="center", x=0.5),
+                xaxis=dict(gridcolor="rgba(122,143,166,0.12)", linecolor="rgba(122,143,166,0.2)",
+                           tickfont=dict(color=SLATE, size=10)),
+                yaxis=dict(gridcolor="rgba(122,143,166,0.12)", linecolor="rgba(122,143,166,0.2)",
+                           tickfont=dict(color=SLATE, size=10)),
+            )
+            return fig
+
+        def kpi_card(label, value, col):
+            col.markdown(f"""
+            <div style='background:{SURFACE};border:1px solid rgba(200,168,90,0.25);
+                border-radius:10px;padding:14px 16px;text-align:left;margin-bottom:6px;'>
+              <div style='font-size:0.62rem;text-transform:uppercase;letter-spacing:1.5px;
+                  color:{SLATE};font-family:Outfit,sans-serif;margin-bottom:6px;'>{label}</div>
+              <div style='font-size:1.65rem;font-weight:700;color:{GREEN};
+                  font-family:"Cormorant Garamond",serif;line-height:1.1;'>{value}</div>
+            </div>""", unsafe_allow_html=True)
+
+        def gauge_card(label, value, min_val, max_val, col, fmt=".2f"):
+            fig = go.Figure(go.Indicator(
+                mode="gauge+number",
+                value=value,
+                number=dict(font=dict(color=GREEN, size=26, family="Cormorant Garamond"),
+                            valueformat=fmt),
+                gauge=dict(
+                    axis=dict(range=[min_val, max_val],
+                              tickfont=dict(color=SLATE, size=9),
+                              tickformat=fmt),
+                    bar=dict(color=GREEN, thickness=0.5),
+                    bgcolor=BG,
+                    borderwidth=0,
+                    steps=[dict(range=[min_val, max_val], color="rgba(122,143,166,0.08)")],
+                    threshold=dict(line=dict(color=GOLD, width=2), thickness=0.75, value=value),
+                ),
+            ))
+            fig.update_layout(
+                paper_bgcolor=SURFACE, plot_bgcolor=SURFACE,
+                font=dict(color=CREAM, family="Outfit"),
+                height=170, margin=dict(l=10, r=10, t=8, b=0),
+                title=dict(text=label, font=dict(color=CREAM, size=11), x=0.5, xanchor="center"),
+            )
+            col.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+        # ── Page header ───────────────────────────────────────────────────
         st.markdown("""
-        <div style='background:#0F1923; border:1px solid rgba(200,168,90,0.30);
-                    border-radius:14px; padding:6px;
-                    box-shadow:0 4px 24px rgba(0,0,0,0.5); margin-bottom:0.8rem;'>
-        """, unsafe_allow_html=True)
-
-        # Responsive Power BI iframe — 16:10 aspect ratio via padding-top trick
-        components.html(
-            f"""
-            <!DOCTYPE html><html><head>
-            <style>
-              * {{ margin:0; padding:0; box-sizing:border-box; }}
-              body {{ background:#0F1923; }}
-              .pbi-wrap {{
-                position:relative; width:100%; padding-top:62%;
-                border-radius:10px; overflow:hidden;
-              }}
-              iframe {{
-                position:absolute; top:0; left:0;
-                width:100%; height:100%;
-                border:none; border-radius:10px;
-              }}
-            </style></head><body>
-              <div class="pbi-wrap">
-                <iframe
-                  title="BlueStone — Power BI Analytics Dashboard"
-                  src="{POWERBI_EMBED_URL}"
-                  allowFullScreen="true"
-                  loading="lazy">
-                </iframe>
-              </div>
-            </body></html>
-            """,
-            height=780,
-            scrolling=False,
-        )
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        # Source attribution row
-        st.markdown(f"""
-        <div style='display:flex; justify-content:space-between; align-items:center;
-                    padding:0.5rem 0.2rem; font-size:0.75rem; color:var(--slate);'>
-          <span>📊 Source: Power BI Service — Publish to Web (Public embed)</span>
-          <a href="{POWERBI_EMBED_URL}" target="_blank"
-             style="color:var(--gold); text-decoration:none; font-weight:500;">
-            Open in Power BI ↗
-          </a>
+        <div class='bs-page-header'>
+          <h1><span class='bs-h1-icon'>📈</span>Analytics Dashboard</h1>
+          <div class='bs-page-subtitle'>Interactive business intelligence — Executive Overview · Rent Transaction · Sale Transaction</div>
         </div>
         """, unsafe_allow_html=True)
 
-    with dash_tab2:
-        gi1, gi2 = st.columns(2)
+        # ── ML model KPIs ─────────────────────────────────────────────────
+        kc1, kc2, kc3, kc4, kc5 = st.columns(5)
+        kc1.metric("Reg Model",    meta.get("regression_model_name", "GBR"))
+        kc2.metric("Test R²",      str(meta.get("test_reg_r2", "0.9806")))
+        kc3.metric("RMSE",         f"${meta.get('test_reg_rmse', 124563):,.0f}")
+        kc4.metric("Test AUC-ROC", str(meta.get("test_clf_auc", "—")))
+        kc5.metric("Test F1",      str(meta.get("test_clf_f1",  "—")))
 
-        with gi1:
-            st.markdown("""
-            <div class='bs-card'>
-              <div class='bs-form-section-title'>🔗 Method Used — Publish to Web</div>
-              <div style='font-size:0.85rem; color:var(--slate); line-height:1.8;'>
-                This page uses <strong style='color:var(--cream);'>Method 1:
-                Publish to Web</strong> — Power BI’s free public
-                embedding option.<br><br>
-                The <em>Link to embed this content</em> URL from Power BI Service
-                is passed into a responsive iframe rendered by
-                <code>streamlit.components.v1.html()</code>.
-                No authentication token or Azure subscription is required.
-              </div>
-            </div>
+        st.markdown("<div style='margin-top:0.6rem;'></div>", unsafe_allow_html=True)
 
-            <div class='bs-card'>
-              <div class='bs-form-section-title'>⚙️ To Update the Dashboard URL</div>
-              <div style='font-size:0.85rem; color:var(--slate); line-height:1.8;'>
-                Open <code>app.py</code> and find the line:<br><br>
-                <code style='color:var(--gold);'>POWERBI_EMBED_URL = (...)</code><br><br>
-                Replace the URL string with the new one from Power BI Service:<br><br>
-                <strong style='color:var(--cream);'>File → Embed report →
-                Publish to web (public) → "Link to embed this content"</strong><br><br>
-                Save the file and refresh Streamlit — no restart required.
-              </div>
-            </div>
-            """, unsafe_allow_html=True)
+        tab_exec, tab_rent, tab_sale = st.tabs([
+            "📊  Executive Overview",
+            "🏘️  Rent Transaction",
+            "🏠  Sale Transaction",
+        ])
 
-        with gi2:
-            st.markdown("""
-            <div class='bs-card'>
-              <div class='bs-form-section-title'>✅ What works with Method 1</div>
-              <div style='font-size:0.85rem; color:var(--slate); line-height:1.8;'>
-                ✔️ &nbsp;All Power BI interactivity (filters, slicers,
-                drill-downs, bookmarks)<br>
-                ✔️ &nbsp;Cross-page navigation inside the report<br>
-                ✔️ &nbsp;Tooltips and hover interactions<br>
-                ✔️ &nbsp;No viewer login or Microsoft account required<br>
-                ✔️ &nbsp;Free — no extra Power BI licensing cost
-              </div>
-            </div>
+        # ── TAB 1: EXECUTIVE OVERVIEW ─────────────────────────────────────
+        with tab_exec:
+            st.markdown(f'<div style="font-size:1rem;font-weight:700;color:' + CREAM + ';font-family:Outfit,sans-serif;padding:8px 4px 4px;">Bluestone Real Estate Executive Market Intelligence</div>', unsafe_allow_html=True)
 
-            <div class='bs-card'>
-              <div class='bs-form-section-title'>⚠️ Limitations of Method 1</div>
-              <div style='font-size:0.85rem; color:var(--slate); line-height:1.8;'>
-                ✗ &nbsp;Report data is
-                <strong style='color:var(--rose);'>publicly accessible</strong>
-                via the embed URL — do not use for sensitive or confidential data<br><br>
-                ✗ &nbsp;Row-level security (RLS) is
-                <strong style='color:var(--rose);'>not enforced</strong><br><br>
-                ✗ &nbsp;Power BI displays a small public watermark banner<br><br>
-                ✗ &nbsp;Selections inside Power BI cannot drive Streamlit predictions
-                — the two systems are visually integrated but computationally
-                independent<br><br>
-                <span style='color:var(--gold);’'>→ For sensitive data, upgrade to
-                Method 2 (Azure embed token) — only the
-                <code>POWERBI_EMBED_URL</code> variable in <code>app.py</code>
-                changes.</span>
-              </div>
-            </div>
-            """, unsafe_allow_html=True)
+            exec_years = sorted([y for y in adf["YEAR"].dropna().unique().astype(int) if y >= 2024])
+            ey_sel = st.multiselect("Filter by Year", ["Select all"] + exec_years, default=["Select all"], key="exec_year")
+            ec_sel = st.multiselect("Filter by City", ["Select all"] + CITIES, default=["Select all"], key="exec_city")
 
+            edf = adf.copy()
+            if "Select all" not in ey_sel and ey_sel:
+                edf = edf[edf["YEAR"].isin(ey_sel)]
+            if "Select all" not in ec_sel and ec_sel:
+                edf = edf[edf["CITY"].isin(ec_sel)]
 
+            st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+            ek1, ek2, ek3, ek4, ek5 = st.columns(5)
+            kpi_card("Total Listing",                     f"{len(edf):,}",                                               ek1)
+            kpi_card("Active Listing",                    f"{(edf['STATUS']=='Active').sum():,}",                    ek2)
+            kpi_card("Total Inquiry",                     f"{int(edf['TOTAL_INQUIRIES'].sum()):,}",                    ek3)
+            kpi_card("Avg Days of Property on Market",    f"{edf['DAYSONMARKET'].mean():.0f}",                         ek4)
+            kpi_card("Conversion Rate",                   f"{edf['CONVERTED_INQUIRIES'].sum()/max(edf['TOTAL_INQUIRIES'].sum(),1)*100:.2f}%", ek5)
+
+            st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
+            er1, er2, er3 = st.columns([1.4, 1.2, 0.9])
+
+            with er1:
+                mi = edf.groupby("MONTH")["TOTAL_INQUIRIES"].sum().reindex(range(1,13), fill_value=0)
+                fig = go.Figure(go.Scatter(x=MONTHS, y=mi.values, mode="lines+markers",
+                    line=dict(color=GREEN, width=2.5), marker=dict(color=GREEN, size=6),
+                    fill="tozeroy", fillcolor="rgba(46,204,113,0.08)"))
+                pbi_layout(fig, "Monthly Inquiry Trend", 290)
+                fig.update_yaxes(tickformat=".0s")
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+            with er2:
+                dp = edf.groupby("PROPERTYTYPE")["DAYSONMARKET"].mean().sort_values(ascending=False).reset_index()
+                fig = go.Figure(go.Bar(x=dp["PROPERTYTYPE"], y=dp["DAYSONMARKET"].round(0),
+                    marker_color=GREEN, text=dp["DAYSONMARKET"].round(0).astype(int),
+                    textposition="outside", textfont=dict(color=CREAM, size=10)))
+                pbi_layout(fig, "Avg. Days on Market by Property Type", 290)
+                fig.update_xaxes(tickangle=-25, tickfont=dict(size=9))
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+            with er3:
+                lc = edf["LISTING_TYPE"].value_counts()
+                fig = go.Figure(go.Pie(labels=lc.index, values=lc.values, hole=0.55,
+                    marker=dict(colors=[GREEN, AMBER]), textfont=dict(color=CREAM, size=10)))
+                pbi_layout(fig, "Listing Type", 290, showlegend=True)
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+            st.markdown("<div style='height:4px;'></div>", unsafe_allow_html=True)
+            er4, er5, er6 = st.columns([1.1, 1.1, 0.9])
+
+            with er4:
+                cc = edf.groupby("TOP_CHANNEL")["CONVERTED_INQUIRIES"].sum().sort_values(ascending=False).reset_index()
+                fig = go.Figure(go.Pie(labels=cc["TOP_CHANNEL"], values=cc["CONVERTED_INQUIRIES"], hole=0.5,
+                    marker=dict(colors=[GREEN, AMBER, "#3498DB", "#9B59B6", TEAL, GOLD]),
+                    textfont=dict(color=CREAM, size=9), textinfo="percent"))
+                pbi_layout(fig, "Total Listing Converted by Channel", 290, showlegend=True)
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+            with er5:
+                pc = edf.groupby("PROPERTYTYPE")["CONVERTED_INQUIRIES"].sum().sort_values(ascending=False).reset_index()
+                fig = go.Figure(go.Bar(x=pc["PROPERTYTYPE"], y=pc["CONVERTED_INQUIRIES"],
+                    marker_color=GREEN, text=pc["CONVERTED_INQUIRIES"],
+                    textposition="outside", textfont=dict(color=CREAM, size=9)))
+                pbi_layout(fig, "Listing Converted by Property Type", 290)
+                fig.update_xaxes(tickangle=-25, tickfont=dict(size=9))
+                fig.update_yaxes(tickformat=".0s")
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+            with er6:
+                lg = edf.groupby("LISTING_TYPE").agg(
+                    Active=("STATUS", lambda x: (x=="Active").sum()),
+                    Converted=("CONVERTED_INQUIRIES","sum")).reset_index()
+                fig = go.Figure()
+                fig.add_trace(go.Bar(name="Active Listings", y=lg["LISTING_TYPE"], x=lg["Active"],
+                    orientation="h", marker_color=GREEN,
+                    text=[f"{v/1000:.0f}K" for v in lg["Active"]],
+                    textposition="outside", textfont=dict(color=CREAM, size=9)))
+                fig.add_trace(go.Bar(name="Count of converted", y=lg["LISTING_TYPE"], x=lg["Converted"],
+                    orientation="h", marker_color=TEAL,
+                    text=[f"{v/1000:.0f}K" for v in lg["Converted"]],
+                    textposition="outside", textfont=dict(color=CREAM, size=9)))
+                pbi_layout(fig, "Listing vs Converted by ListingType", 290, showlegend=True)
+                fig.update_layout(barmode="group", xaxis=dict(tickformat=".0s"))
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+        # ── TAB 2: RENT TRANSACTION ───────────────────────────────────────
+        with tab_rent:
+            st.markdown(f'<div style="font-size:1rem;font-weight:700;color:' + CREAM + ';font-family:Outfit,sans-serif;padding:8px 4px 4px;">Bluestone Real Estate Rent Transaction Analysis</div>', unsafe_allow_html=True)
+
+            ry_sel = st.multiselect("Filter by Year", ["Select all"] + sorted([y for y in adf["YEAR"].dropna().unique().astype(int) if y >= 2024]),
+                                    default=["Select all"], key="rent_year")
+            rc_sel = st.multiselect("Filter by City", ["Select all"] + CITIES, default=["Select all"], key="rent_city")
+
+            rdf = adf[adf["LISTING_TYPE"]=="rental"].copy()
+            if "Select all" not in ry_sel and ry_sel:
+                rdf = rdf[rdf["YEAR"].isin(ry_sel)]
+            if "Select all" not in rc_sel and rc_sel:
+                rdf = rdf[rdf["CITY"].isin(rc_sel)]
+            rdf_t = rdf[rdf["AGREEDRENT"].notna()].copy()
+
+            st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+            rk1, rk2, rk3, rk4 = st.columns(4)
+            kpi_card("Total Rent Transaction", f"{len(rdf_t):,}", rk1)
+            kpi_card("Market Avg. Rent Price",  f"${rdf_t['MARKETAVGRENT'].mean():,.0f}" if "MARKETAVGRENT" in rdf_t.columns and rdf_t["MARKETAVGRENT"].notna().any() else f"${rdf_t['AGREEDRENT'].mean():,.0f}", rk2)
+            gauge_card("Average Lease Month", rdf_t["LEASETERMMONTHS"].mean() if "LEASETERMMONTHS" in rdf_t.columns and rdf_t["LEASETERMMONTHS"].notna().any() else 12, 1, 24, rk3, fmt=".0f")
+            gauge_card("Rent to List Ratio",  rdf_t["RENTTOLISTRATIO"].mean() if "RENTTOLISTRATIO" in rdf_t.columns and rdf_t["RENTTOLISTRATIO"].notna().any() else 0.99, 0.96, 1.0, rk4, fmt=".2f")
+
+            st.markdown("<div style='height:4px;'></div>", unsafe_allow_html=True)
+            rr1, rr2, rr3 = st.columns([1.4, 1.2, 0.9])
+
+            with rr1:
+                mr = rdf_t.groupby("MONTH")["AGREEDRENT"].mean().reindex(range(1,13)).reset_index()
+                mr.columns = ["MONTH","AGREEDRENT"]
+                fig = go.Figure(go.Scatter(x=MONTHS, y=mr["AGREEDRENT"].values, mode="lines+markers",
+                    line=dict(color=GREEN, width=2.5), marker=dict(color=GREEN, size=6),
+                    fill="tozeroy", fillcolor="rgba(46,204,113,0.08)"))
+                pbi_layout(fig, "Rent Price Trend", 290)
+                fig.update_yaxes(tickprefix="$", tickformat=",.0f")
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+            with rr2:
+                cr = rdf_t.groupby("CITY")["AGREEDRENT"].mean().sort_values(ascending=False).reset_index()
+                fig = go.Figure(go.Bar(x=cr["CITY"], y=cr["AGREEDRENT"], marker_color=GREEN,
+                    text=["$"+f"{v/1000:.1f}K" for v in cr["AGREEDRENT"]],
+                    textposition="outside", textfont=dict(color=CREAM, size=10)))
+                pbi_layout(fig, "Rent Price by City", 290)
+                fig.update_yaxes(tickprefix="$", tickformat=",.0f")
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+            with rr3:
+                ad_sum = rdf_t["AGREEDRENT"].sum()
+                dep_sum = rdf_t["SECURITYDEPOSITAMT"].sum() if "SECURITYDEPOSITAMT" in rdf_t.columns else 0
+                fig = go.Figure(go.Pie(labels=["Sum of securityDe...", "Sum of agre..."],
+                    values=[dep_sum, ad_sum], hole=0.55,
+                    marker=dict(colors=[GREEN, AMBER]),
+                    textfont=dict(color=CREAM, size=10), textinfo="percent"))
+                pbi_layout(fig, "Agreed Rent vs Deposit Paid", 290, showlegend=True)
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+            st.markdown("<div style='height:4px;'></div>", unsafe_allow_html=True)
+            rr4, rr5, rr6 = st.columns([1.2, 1.2, 0.9])
+
+            with rr4:
+                pr = rdf_t.groupby("PROPERTYTYPE")["AGREEDRENT"].mean().sort_values(ascending=False).reset_index()
+                fig = go.Figure(go.Bar(x=pr["PROPERTYTYPE"], y=pr["AGREEDRENT"], marker_color=GREEN,
+                    text=["$"+f"{v/1000:.1f}K" for v in pr["AGREEDRENT"]],
+                    textposition="outside", textfont=dict(color=CREAM, size=9)))
+                pbi_layout(fig, "Rent Price by Property type", 290)
+                fig.update_xaxes(tickangle=-25, tickfont=dict(size=9))
+                fig.update_yaxes(tickprefix="$", tickformat=",.0f")
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+            with rr5:
+                sr_cnt = rdf_t.groupby("STATE").size().sort_values(ascending=False).reset_index(name="count")
+                fig = go.Figure(go.Bar(x=sr_cnt["STATE"], y=sr_cnt["count"], marker_color=GREEN,
+                    text=[f"{v/1000:.1f}K" for v in sr_cnt["count"]],
+                    textposition="outside", textfont=dict(color=CREAM, size=10)))
+                pbi_layout(fig, "Total Rent Transaction by State", 290)
+                fig.update_yaxes(tickformat=".0s")
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+            with rr6:
+                sc = rdf_t["MOST_COMMON_SCREENING"].value_counts().reset_index()
+                sc.columns = ["outcome","count"]
+                fig = go.Figure(go.Bar(x=sc["outcome"], y=sc["count"], marker_color=GREEN,
+                    text=[f"{v/1000:.1f}K" for v in sc["count"]],
+                    textposition="outside", textfont=dict(color=CREAM, size=9)))
+                pbi_layout(fig, "Tenant Screening Outcome", 290)
+                fig.update_xaxes(tickangle=-15, tickfont=dict(size=9))
+                fig.update_yaxes(tickformat=".0s")
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+        # ── TAB 3: SALE TRANSACTION ───────────────────────────────────────
+        with tab_sale:
+            st.markdown(f'<div style="font-size:1rem;font-weight:700;color:' + CREAM + ';font-family:Outfit,sans-serif;padding:8px 4px 4px;">Bluestone Real Estate Sale Transaction Analysis</div>', unsafe_allow_html=True)
+
+            sy_sel = st.multiselect("Filter by Year", ["Select all"] + sorted([y for y in adf["YEAR"].dropna().unique().astype(int) if y >= 2024]),
+                                    default=["Select all"], key="sale_year")
+            sc_sel = st.multiselect("Filter by City", ["Select all"] + CITIES, default=["Select all"], key="sale_city")
+
+            sdf = adf[adf["LISTING_TYPE"]=="sale"].copy()
+            if "Select all" not in sy_sel and sy_sel:
+                sdf = sdf[sdf["YEAR"].isin(sy_sel)]
+            if "Select all" not in sc_sel and sc_sel:
+                sdf = sdf[sdf["CITY"].isin(sc_sel)]
+            sdf_t = sdf[sdf["FINALSALEPRICE"].notna()].copy()
+
+            st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+            sk1, sk2, sk3, sk4 = st.columns(4)
+            kpi_card("Total Sale Transaction", f"{len(sdf_t):,}", sk1)
+            kpi_card("Average Market Price",   f"${sdf_t['MARKETAVGPRICE'].mean():,.0f}" if "MARKETAVGPRICE" in sdf_t.columns and sdf_t["MARKETAVGPRICE"].notna().any() else f"${sdf_t['FINALSALEPRICE'].mean():,.0f}", sk2)
+            gauge_card("Offer to Ratio List",   sdf_t["OFFERTOLISTRATIO"].mean() if "OFFERTOLISTRATIO" in sdf_t.columns and sdf_t["OFFERTOLISTRATIO"].notna().any() else 0.97, 0.90, 1.0, sk3, fmt=".2f")
+            gauge_card("Average Days on Market", sdf_t["MARKETAVGDOM"].mean() if "MARKETAVGDOM" in sdf_t.columns and sdf_t["MARKETAVGDOM"].notna().any() else sdf_t["DAYSTOCLOSE"].mean(), 25, 250, sk4, fmt=".0f")
+
+            st.markdown("<div style='height:4px;'></div>", unsafe_allow_html=True)
+            sr1, sr2, sr3 = st.columns([1.2, 1.2, 0.9])
+
+            with sr1:
+                ss = sdf_t.groupby("STATE")["FINALSALEPRICE"].mean().sort_values(ascending=False).reset_index()
+                fig = go.Figure(go.Bar(x=ss["STATE"], y=ss["FINALSALEPRICE"], marker_color=GREEN,
+                    text=["$"+f"{v/1e6:.1f}M" for v in ss["FINALSALEPRICE"]],
+                    textposition="outside", textfont=dict(color=CREAM, size=10)))
+                pbi_layout(fig, "Sale Price by State", 290)
+                fig.update_yaxes(tickprefix="$", tickformat=".2s")
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+            with sr2:
+                sp = sdf_t.groupby("PROPERTYTYPE")["FINALSALEPRICE"].mean().sort_values(ascending=False).reset_index()
+                fig = go.Figure(go.Bar(y=sp["PROPERTYTYPE"], x=sp["FINALSALEPRICE"],
+                    orientation="h", marker_color=GREEN,
+                    text=["$"+f"{v/1e6:.1f}M" for v in sp["FINALSALEPRICE"]],
+                    textposition="outside", textfont=dict(color=CREAM, size=9)))
+                pbi_layout(fig, "Sale Price by Property Type", 290)
+                fig.update_xaxes(tickprefix="$", tickformat=".2s")
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+            with sr3:
+                sc_cnt = sdf_t.groupby("STATE").size().sort_values(ascending=False).reset_index(name="count")
+                fig = go.Figure(go.Bar(x=sc_cnt["STATE"], y=sc_cnt["count"], marker_color=GREEN,
+                    text=[f"{v/1000:.0f}K" for v in sc_cnt["count"]],
+                    textposition="outside", textfont=dict(color=CREAM, size=10)))
+                pbi_layout(fig, "Sale Transaction by State", 290)
+                fig.update_yaxes(tickformat=".0s")
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+            st.markdown("<div style='height:4px;'></div>", unsafe_allow_html=True)
+            sr4, sr5, sr6 = st.columns([1.2, 1.2, 0.9])
+
+            with sr4:
+                fd = sdf_t.groupby("TOP_FINANCINGTYPE")["DAYSTOCLOSE"].mean().sort_values(ascending=False).reset_index()
+                fig = go.Figure(go.Scatter(x=fd["TOP_FINANCINGTYPE"], y=fd["DAYSTOCLOSE"].round(1),
+                    mode="lines+markers", line=dict(color=GREEN, width=2.5),
+                    marker=dict(color=GREEN, size=8)))
+                pbi_layout(fig, "Average Days to Close by Financing Type", 290)
+                fig.update_xaxes(tickangle=-10)
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+            with sr5:
+                mo = sdf_t.groupby("PROPERTYTYPE")[["MARKETAVGPRICE","OFFERPRICE"]].mean().reset_index()
+                fig = go.Figure()
+                fig.add_trace(go.Bar(name="Average of marketAvgPrice", x=mo["PROPERTYTYPE"], y=mo["MARKETAVGPRICE"],
+                    marker_color=GREEN, text=["$"+f"{v/1e6:.1f}M" for v in mo["MARKETAVGPRICE"]],
+                    textposition="outside", textfont=dict(color=CREAM, size=8)))
+                fig.add_trace(go.Bar(name="Average of offerPrice", x=mo["PROPERTYTYPE"], y=mo["OFFERPRICE"],
+                    marker_color=AMBER, text=["$"+f"{v/1e6:.1f}M" for v in mo["OFFERPRICE"]],
+                    textposition="outside", textfont=dict(color=CREAM, size=8)))
+                pbi_layout(fig, "Market Price vs Offer Price by Property Type", 290, showlegend=True)
+                fig.update_layout(barmode="group")
+                fig.update_xaxes(tickangle=-20, tickfont=dict(size=8))
+                fig.update_yaxes(tickprefix="$", tickformat=".2s")
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+            with sr6:
+                ls = sdf_t["PRICE"].sum()
+                os_ = sdf_t["OFFERPRICE"].sum()
+                fig = go.Figure(go.Pie(labels=["Sum of listPrice","Sum of offerPrice"],
+                    values=[ls, os_], hole=0.55,
+                    marker=dict(colors=[AMBER, TEAL]),
+                    textfont=dict(color=CREAM, size=10), textinfo="percent"))
+                pbi_layout(fig, "List Price vs Offer Price", 290, showlegend=True)
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 # ════════════════════════════════════════════════════════════════════════════
 # PAGE 6 — ABOUT & DEPLOYMENT
 # ════════════════════════════════════════════════════════════════════════════
