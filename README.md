@@ -4,7 +4,7 @@
 
 [![GitHub](https://img.shields.io/badge/GitHub-NdifrekeAnalytics-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/NdifrekeAnalytics)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Ndifreke%20Ekanem-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/ndifreke-ekanem-b479a027/)
-[![Streamlit App](https://img.shields.io/badge/Live%20App-Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://bluestone-real-estate-business-intelligence-model.streamlit.app)
+[![Streamlit App](https://img.shields.io/badge/Live%20App-Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://bluestone-real-estate.streamlit.app)
 
 <br/>
 
@@ -45,7 +45,7 @@
 Built on a dataset of **61,520 property listings across 7 major US cities** — Chicago, Atlanta, Phoenix, Austin, Denver, Houston, and Charlotte — BlueStone integrates machine learning, interactive analytics, and a production-grade web application into a single centralised intelligence hub.
 
 The app is live and publicly accessible at:
-🔗 **[bluestone-real-estate-business-intelligence-model.streamlit.app](https://bluestone-real-estate-business-intelligence-model.streamlit.app)**
+🔗 **[bluestone-real-estate-business-intelligence-model.streamlit.app](https://bluestone-real-estate.streamlit.app)**
 
 ---
 
@@ -64,7 +64,7 @@ The result: lost revenue, inefficient sales processes, and strategic decisions m
 
 ## 🎯 Project Objectives & Solutions
 
-| Objective | Solution Delivered |
+| **Objective** | **Solution Delivered** |
 |---|---|
 | Build an accurate property price prediction model | Gradient Boosting ensemble achieving **R² = 0.9806**, RMSE = $124,563, MAPE = 7.84% |
 | Predict inquiry-to-sale lead conversion | Classification model with **AUC-ROC = 0.9783**, F1 = 0.9013 |
@@ -197,40 +197,9 @@ bluestone-real-estate-business-intelligence-model/
 
 ---
 
-## 🚀 Getting Started
-
-### Prerequisites
-- Python 3.11
-- Anaconda or virtualenv
-- Git
-
-### Local Setup
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/NdifrekeAnalytics/Bluestone-Real-Estate-Business-Intelligence-Model.git
-cd Bluestone-Real-Estate-Business-Intelligence-Model
-
-# 2. Create and activate environment
-conda create -n bluestone-app python=3.11
-conda activate bluestone-app
-
-# 3. Install dependencies
-pip install -r requirements.txt
-
-# 4. Run the ML pipeline to generate model artefacts (if not already present)
-python bluestone_ml_pipeline.py       # Blocks 1–3: data prep
-python bluestone_ml_pipeline_v2.py    # Blocks 4–10: training & saving pkl files
-
-# 5. Launch the app
-streamlit run app.py
-```
-
-The app will open at `http://localhost:8501`
-
 ### Live Deployment
 The app is deployed at:
-🔗 **[bluestone-real-estate-business-intelligence-model.streamlit.app](https://bluestone-real-estate-business-intelligence-model.streamlit.app)**
+🔗 **[bluestone-real-estate-business-intelligence-model.streamlit.app](https://bluestone-real-estate.streamlit.app)**
 
 ---
 
